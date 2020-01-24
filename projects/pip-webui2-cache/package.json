@@ -1,0 +1,13 @@
+{
+  "name": "pip-webui2-cache",
+  "version": "1.0.0",
+  "dependencies": {
+    "dexie": "^2.0.4"
+  },
+  "peerDependencies": {
+    "@angular/common": "^8.2.0",
+    "@angular/core": "^8.2.0",
+    "lodash": "^4.17.15",
+    "rxjs": "~6.4.0"
+  }
+}

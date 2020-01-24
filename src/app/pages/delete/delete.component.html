@@ -1,0 +1,9 @@
+<div [formGroup]="form" class="controls">
+    <mat-form-field>
+        <input matInput formControlName="id" placeholder="ID">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="deletePhoto()" [disabled]="form.invalid">Delete photo</button>
+</div>
+<pre class="result" [ngClass]="{'error': error}">
+    {{ resultJson }}
+</pre>

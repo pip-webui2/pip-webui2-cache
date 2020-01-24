@@ -1,0 +1,23 @@
+<mat-toolbar color="primary">
+  <button mat-icon-button>
+    <mat-icon (click)="sidenav.toggle()">reorder</mat-icon>
+  </button>
+  <span>Caching system</span>
+  <div class="grow"></div>
+  <button mat-icon-button>
+    <mat-icon (click)="clear()">delete_sweep</mat-icon>
+  </button>
+</mat-toolbar>
+<mat-sidenav-container>
+  <mat-sidenav #sidenav mode="over">
+    <mat-nav-list>
+      <a mat-list-item routerLink="create" routerLinkActive="active" (click)="sidenav.close()">Create</a>
+      <a mat-list-item routerLink="read" routerLinkActive="active" (click)="sidenav.close()">Read</a>
+      <a mat-list-item routerLink="update" routerLinkActive="active" (click)="sidenav.close()">Update</a>
+      <a mat-list-item routerLink="delete" routerLinkActive="active" (click)="sidenav.close()">Delete</a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

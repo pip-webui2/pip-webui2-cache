@@ -1,0 +1,20 @@
+<h1 mat-dialog-title class="pip-header">{{ data.title  }}</h1>
+<div mat-dialog-content class="pip-content">
+    <ng-container *ngIf="data?.html">
+        <p *ngFor="let text of data.content" [innerHtml]="text"></p>
+    </ng-container>
+    <ng-container *ngIf="!data?.html">
+        <p *ngFor="let text of data.content">{{ text }}</p>
+    </ng-container>
+</div>
+<div mat-dialog-actions align="end">
+    <ng-container *ngFor="let key of keys">
+        <button mat-button *ngIf="key !== initFocusKey" (click)="onClose(key)" [color]="data.actions[key]?.color">
+            {{ data.actions[key]?.text }}
+        </button>
+        <button mat-button *ngIf="key === initFocusKey" (click)="onClose(key)" [color]="data.actions[key]?.color"
+            cdkFocusInitial>
+            {{ data.actions[key]?.text  }}
+        </button>
+    </ng-container>
+</div>

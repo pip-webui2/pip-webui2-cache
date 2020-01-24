@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/pip-webui2-cache",
+  "lib": {
+    "entryFile": "src/public-api.ts",
+    "umdModuleIds": {
+      "dexie": "^2.0.4"
+    }
+  },
+  "whitelistedNonPeerDependencies": [
+    "dexie",
+    "tslib"
+  ]
+}

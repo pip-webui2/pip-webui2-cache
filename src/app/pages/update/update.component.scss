@@ -1,0 +1,21 @@
+:host {
+    display: flex;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+
+    .mat-form-field {
+        width: 100%;
+    }
+
+    .mat-raised-button {
+        margin-bottom: 16px;
+    }
+}
+
+.result {
+    flex: 1;
+    overflow: auto;
+}

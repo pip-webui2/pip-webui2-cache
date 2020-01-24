@@ -1,0 +1,17 @@
+<div [formGroup]="form" class="controls">
+    <mat-form-field>
+        <input matInput formControlName="page" placeholder="Page">
+    </mat-form-field>
+    <mat-form-field>
+        <input matInput formControlName="limit" placeholder="Limit">
+    </mat-form-field>
+    <mat-form-field>
+        <input matInput formControlName="item" placeholder="ID">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="readAllPhotos()">Read all photos</button>
+    <button mat-raised-button color="primary" (click)="readPhotos()">Read photos</button>
+    <button mat-raised-button color="primary" (click)="readPhoto()">Read single photo</button>
+</div>
+<pre class="result">
+    {{ resultJson }}
+</pre>

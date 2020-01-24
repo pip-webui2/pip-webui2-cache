@@ -1,0 +1,29 @@
+<div class="controls">
+    <ng-container>
+        <h2>Read photo first</h2>
+        <mat-form-field>
+            <input matInput [formControl]="idCtrl" placeholder="ID">
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="readPhoto()" [disabled]="idCtrl.invalid">
+            Read single photo</button>
+    </ng-container>
+    <ng-container [formGroup]="form">
+        <h2>Then update it</h2>
+        <mat-form-field>
+            <input matInput formControlName="albumId" placeholder="Album ID">
+        </mat-form-field>
+        <mat-form-field>
+            <input matInput formControlName="title" placeholder="Title">
+        </mat-form-field>
+        <mat-form-field>
+            <input matInput formControlName="url" placeholder="URL">
+        </mat-form-field>
+        <mat-form-field>
+            <input matInput formControlName="thumbnailUrl" placeholder="Thumbnail url">
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="savePhoto()" [disabled]="form.invalid">Save photo</button>
+    </ng-container>
+</div>
+<pre class="result">
+    {{ resultJson }}
+</pre>
