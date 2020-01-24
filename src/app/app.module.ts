@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HttpParams } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PipCacheModule, PIP_CACHE_MODEL, PipCacheModel, PipCacheCollectionParams } from 'pip-webui2-cache';
@@ -10,6 +10,16 @@ import { AppMaterialModule } from './material.module';
 import { PhotosDataService } from './services';
 import { PagesModule } from './pages/pages.module';
 import { DialogsModule } from './dialogs/dialogs.module';
+
+export function getPhotosKey(groups: any) { return groups && groups.id; }
+export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
+  const res: PipCacheCollectionParams = {};
+  if (params.has('p') && params.has('l')) {
+    res.limit = parseInt(params.get('l'), 10);
+    res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+  }
+  return res;
+}
 
 @NgModule({
   declarations: [
@@ -38,19 +48,12 @@ import { DialogsModule } from './dialogs/dialogs.module';
         },
         interceptors: {
           item: {
-            match: /photos\/(?<id>[^ $\/]*)/,
-            getKey: (groups: any) => groups.id
+            match: new RegExp('photos\/(?<id>[^ $\/]*)'),
+            getKey: getPhotosKey
           },
           collection: {
-            match: /photos/,
-            getParams: params => {
-              const res: PipCacheCollectionParams = {};
-              if (params.has('p') && params.has('l')) {
-                res.limit = parseInt(params.get('l'), 10);
-                res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
-              }
-              return res;
-            }
+            match: new RegExp('photos'),
+            getParams: getPhotosParams
           }
         }
       } as PipCacheModel,

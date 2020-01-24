@@ -68,6 +68,16 @@ Description:
 
 Example:
 ```js
+export function getPhotosKey(groups: any) { return groups && groups.id; }
+export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
+  const res: PipCacheCollectionParams = {};
+  if (params.has('p') && params.has('l')) {
+    res.limit = parseInt(params.get('l'), 10);
+    res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+  }
+  return res;
+}
+// ...
 {
   provide: PIP_CACHE_MODEL,
   useValue: {
@@ -78,19 +88,12 @@ Example:
     },
     interceptors: {
       item: {
-        match: /photos\/(?<id>[^ $\/]*)/, // Catch all requests and look for id
-        getKey: (groups: any) => groups.id  // return 'id' from RexExp match
+        match: new RegExp('photos\/(?<id>[^ $\/]*)'), // Catch all requests and look for id
+        getKey: getPhotosKey  // return 'id' from RexExp match
       },
       collection: {
-        match: /photos/, // Catch all requests and look for 'photos' in request
-        getParams: params => { // Custom params handler
-          const res: PipCacheCollectionParams = {};
-          if (params.has('p') && params.has('l')) {
-            res.limit = parseInt(params.get('l'), 10);
-            res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
-          }
-          return res;
-        }
+        match: new RegExp('photos'), // Catch all requests and look for 'photos' in request
+        getParams: getPhotosParams // Custom params handler
       }
     }
   } as PipCacheModel,
