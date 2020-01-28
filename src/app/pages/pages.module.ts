@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NgxJsonViewerModule } from 'ngx-json-viewer';
 
 import { CreateComponent } from './create/create.component';
 import { UpdateComponent } from './update/update.component';
@@ -14,7 +15,8 @@ import { AppMaterialModule } from '../material.module';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    AppMaterialModule
+    AppMaterialModule,
+    NgxJsonViewerModule
   ]
 })
 export class PagesModule { }

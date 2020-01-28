@@ -3,6 +3,10 @@
     <mat-icon (click)="sidenav.toggle()">reorder</mat-icon>
   </button>
   <span>Caching system</span>
+  <ng-container *ngIf="breadcrumb$ | async as breadcrumb">
+    <span>&nbsp;—&nbsp;</span>
+    <span>{{ breadcrumb }}</span>
+  </ng-container>
   <div class="grow"></div>
   <button mat-icon-button>
     <mat-icon (click)="clear()">delete_sweep</mat-icon>
@@ -10,6 +14,7 @@
 </mat-toolbar>
 <mat-sidenav-container>
   <mat-sidenav #sidenav mode="over">
+    <mat-slide-toggle [formControl]="cacheEnabledCtrl">Cache enabled</mat-slide-toggle>
     <mat-nav-list>
       <a mat-list-item routerLink="create" routerLinkActive="active" (click)="sidenav.close()">Create</a>
       <a mat-list-item routerLink="read" routerLinkActive="active" (click)="sidenav.close()">Read</a>

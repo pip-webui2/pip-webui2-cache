@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { HttpClientModule, HttpParams } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { PipCacheModule, PIP_CACHE_MODEL, PipCacheModel, PipCacheCollectionParams } from 'pip-webui2-cache';
@@ -7,7 +8,7 @@ import { PipCacheModule, PIP_CACHE_MODEL, PipCacheModel, PipCacheCollectionParam
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AppMaterialModule } from './material.module';
-import { PhotosDataService } from './services';
+import { PhotosDataService, AppService } from './services';
 import { PagesModule } from './pages/pages.module';
 import { DialogsModule } from './dialogs/dialogs.module';
 
@@ -28,6 +29,8 @@ export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
   imports: [
     BrowserAnimationsModule,
     BrowserModule,
+    FormsModule,
+    ReactiveFormsModule,
     HttpClientModule,
     PipCacheModule.forRoot({ enableLogs: true }),
 
@@ -37,6 +40,7 @@ export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
     AppMaterialModule
   ],
   providers: [
+    AppService,
     PhotosDataService,
     {
       provide: PIP_CACHE_MODEL,

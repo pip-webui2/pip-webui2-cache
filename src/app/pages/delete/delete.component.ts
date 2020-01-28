@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 
-import { PhotosDataService } from '../../services';
+import { PhotosDataService, AppService } from '../../services';
 
 @Component({
   selector: 'pip-delete',
@@ -18,20 +18,20 @@ export class DeleteComponent {
   };
 
   constructor(
+    private app: AppService,
     private fb: FormBuilder,
     private photosDs: PhotosDataService
   ) {
+    this.app.breadcrumb = 'Delete';
     this.form = this.fb.group({
       id: [null, Validators.required],
     });
   }
 
-  public get resultJson(): string { return JSON.stringify(this.result, null, 2); }
-
   deletePhoto() {
     this.error = false;
     const t0 = performance.now();
-    this.photosDs.deletePhoto(this.form.value.id).toPromise().then(res => {
+    this.photosDs.deletePhoto(this.form.value.id, { cache: this.app.cacheEnabled }).toPromise().then(res => {
       const t1 = performance.now();
       this.result = {
         time: (t1 - t0).toFixed(2) + 'ms',

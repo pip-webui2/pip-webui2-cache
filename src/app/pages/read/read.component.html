@@ -12,6 +12,4 @@
     <button mat-raised-button color="primary" (click)="readPhotos()">Read photos</button>
     <button mat-raised-button color="primary" (click)="readPhoto()">Read single photo</button>
 </div>
-<pre class="result">
-    {{ resultJson }}
-</pre>
+<ngx-json-viewer class="result" [json]="result"></ngx-json-viewer>

@@ -4,6 +4,4 @@
     </mat-form-field>
     <button mat-raised-button color="primary" (click)="deletePhoto()" [disabled]="form.invalid">Delete photo</button>
 </div>
-<pre class="result" [ngClass]="{'error': error}">
-    {{ resultJson }}
-</pre>
+<ngx-json-viewer class="result" [ngClass]="{'error': error}" [json]="result"></ngx-json-viewer>

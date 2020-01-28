@@ -31,6 +31,7 @@
     "@angular/router": "~8.2.0",
     "dexie": "^2.0.4",
     "lodash": "^4.17.15",
+    "ngx-json-viewer": "^2.4.0",
     "rxjs": "~6.4.0",
     "tslib": "^1.10.0",
     "zone.js": "~0.9.1"

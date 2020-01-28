@@ -1,7 +1,11 @@
 import { Component } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { PipCacheService } from 'pip-webui2-cache';
+
 import { AskComponent, PipAskDialogData } from './dialogs/ask/ask.component';
+import { AppService } from './services';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'pip-root',
@@ -10,10 +14,17 @@ import { AskComponent, PipAskDialogData } from './dialogs/ask/ask.component';
 })
 export class AppComponent {
 
+  public breadcrumb$: Observable<string>;
+  public cacheEnabledCtrl: FormControl;
+
   constructor(
+    private app: AppService,
     private cacheService: PipCacheService,
     private dialog: MatDialog
-  ) { }
+  ) {
+    this.breadcrumb$ = this.app.breadcrumb$;
+    this.cacheEnabledCtrl = this.app.cacheEnabledCtrl;
+  }
 
   clear() {
     this.dialog.open(AskComponent, {

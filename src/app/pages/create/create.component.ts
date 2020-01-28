@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormBuilder } from '@angular/forms';
+import { pickBy, identity } from 'lodash';
 
-import { PhotosDataService } from '../../services';
+import { Photo } from '../../models';
+import { PhotosDataService, AppService } from '../../services';
 
 @Component({
   selector: 'pip-create',
@@ -17,9 +19,11 @@ export class CreateComponent {
   };
 
   constructor(
+    private app: AppService,
     private fb: FormBuilder,
     private photosDs: PhotosDataService
   ) {
+    this.app.breadcrumb = 'Create';
     this.form = this.fb.group({
       albumId: [],
       title: [],
@@ -28,11 +32,9 @@ export class CreateComponent {
     });
   }
 
-  public get resultJson(): string { return JSON.stringify(this.result, null, 2); }
-
   createPhoto() {
     const t0 = performance.now();
-    this.photosDs.createPhoto(this.form.value).toPromise().then(res => {
+    this.photosDs.createPhoto(pickBy(this.form.value, identity) as Photo, { cache: this.app.cacheEnabled }).toPromise().then(res => {
       const t1 = performance.now();
       this.result = {
         time: (t1 - t0).toFixed(2) + 'ms',

@@ -13,6 +13,4 @@
     </mat-form-field>
     <button mat-raised-button color="primary" (click)="createPhoto()">Create photo</button>
 </div>
-<pre class="result">
-    {{ resultJson }}
-</pre>
+<ngx-json-viewer class="result" [json]="result"></ngx-json-viewer>

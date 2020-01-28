@@ -1,5 +1,6 @@
 :host {
     display: flex;
+    max-width: 100%;
 }
 
 .controls {
@@ -17,5 +18,8 @@
 
 .result {
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
+    ::ng-deep .ngx-json-viewer {
+        overflow-y: auto;
+    }
 }

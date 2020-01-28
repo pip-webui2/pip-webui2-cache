@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
-import { PhotosDataService } from '../../services';
+import { PhotosDataService, AppService } from '../../services';
 
 @Component({
   selector: 'pip-update',
@@ -18,9 +18,11 @@ export class UpdateComponent {
   };
 
   constructor(
+    private app: AppService,
     private fb: FormBuilder,
     private photosDs: PhotosDataService
   ) {
+    this.app.breadcrumb = 'Update';
     this.form = this.fb.group({
       id: [null, Validators.required],
       albumId: [],
@@ -30,12 +32,10 @@ export class UpdateComponent {
     });
   }
 
-  public get resultJson(): string { return JSON.stringify(this.result, null, 2); }
-
   readPhoto() {
     const t0 = performance.now();
     const v = this.form.value;
-    this.photosDs.getPhoto(this.idCtrl.value, { cache: v.cache }).toPromise().then(res => {
+    this.photosDs.getPhoto(this.idCtrl.value, { cache: this.app.cacheEnabled }).toPromise().then(res => {
       const t1 = performance.now();
       this.form.patchValue(res);
       this.result = {
@@ -54,7 +54,7 @@ export class UpdateComponent {
   savePhoto() {
     const t0 = performance.now();
     const v = this.form.value;
-    this.photosDs.updatePhoto(v.id, v).toPromise().then(res => {
+    this.photosDs.updatePhoto(v.id, v, { cache: this.app.cacheEnabled }).toPromise().then(res => {
       const t1 = performance.now();
       this.result = {
         time: (t1 - t0).toFixed(2) + 'ms',
