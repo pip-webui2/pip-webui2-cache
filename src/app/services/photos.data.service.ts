@@ -9,7 +9,7 @@ import { Photo } from '../models';
 export class PhotosDataService {
 
     private httpBackend: HttpClient;
-    private photosUrl = 'http://5c78f6073a89af0014cd7154.mockapi.io/api/v1/photos';
+    private photosUrl = 'https://5c78f6073a89af0014cd7154.mockapi.io/api/v1/photos';
 
     constructor(
         handler: HttpBackend,
