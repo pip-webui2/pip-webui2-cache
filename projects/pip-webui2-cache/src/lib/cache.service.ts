@@ -1,6 +1,6 @@
 import { Injectable, Optional, Inject } from '@angular/core';
 import Dexie from 'dexie';
-import { cloneDeep, defaultsDeep, get } from 'lodash';
+import { defaultsDeep, get } from 'lodash';
 import { MD5 } from 'object-hash';
 
 import {
@@ -162,11 +162,12 @@ export class PipCacheService {
                     }
                     return null;
                 }
+                const res = ids.map(id => items.find(it => it[modelKey] === id));
                 if (this.configService.config.enableLogs) {
-                    console.log('Items: ', items);
+                    console.log('Items: ', res);
                     console.groupEnd();
                 }
-                return items;
+                return res;
             }).catch(reason => {
                 if (reason === null) {
                     return null;
@@ -179,23 +180,25 @@ export class PipCacheService {
     public async setItem(modelName: string, item: any, options?: { removeTotal?: boolean }): Promise<any> {
         const model = this.getModel(modelName);
         const db = this.getDb(model);
-        const [expire, it] = await Promise.all([
+        const promises = [
             db.table('lastRead').put(new Date().valueOf(), item[model.options.key]),
             db.table('items').put(item)
-        ]);
+        ];
         if (options) {
             if (options.removeTotal) {
-                await db.table('meta').delete('total');
+                promises.push(db.table('hashes').toCollection().modify({ total: undefined }));
             }
         }
-        if (this.configService.config.enableLogs) {
-            console.groupCollapsed('%c%s', 'color: blue; font: 1.2rem Impact;',
-                '[PipCache] SET', 'single item #' + item[model.options.key]);
-            console.log('Item: ', it);
-            console.log('Readed at: ', new Date());
-            console.groupEnd();
-        }
-        return it;
+        return Promise.all(promises).then((data) => {
+            if (this.configService.config.enableLogs) {
+                console.groupCollapsed('%c%s', 'color: blue; font: 1.2rem Impact;',
+                    '[PipCache] SET', 'single item #' + item[model.options.key]);
+                console.log('Item: ', data[1]);
+                console.log('Readed at: ', new Date());
+                console.groupEnd();
+            }
+            return data[1];
+        });
     }
 
     public async setItems(modelName: string, items: any[], payload?: {
@@ -219,7 +222,7 @@ export class PipCacheService {
             db.table('hashes').get(hash).then((hi: TotalItem) => {
                 const nh = hi || Object.assign(new TotalItem(), { hash, total: {}, idxMap: [] });
                 ids.forEach((id, idx) => nh.idxMap[idx + offset] = id);
-                if (hasPagination && pagination.limit && items.length < pagination.limit || !hasPagination) {
+                if (hasPagination && pagination.limit && items.length && items.length < pagination.limit || !hasPagination) {
                     total = (pagination.offset || 0) + items.length;
                     nh.total = {
                         value: total,
