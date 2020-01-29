@@ -69,7 +69,7 @@ Description:
 
 Example:
 ```js
-export function getPhotosKey(groups: any) { return groups && groups.id; }
+export getPhotosKey(groups: any) { return groups && groups.length > 1 && groups[1]; }
 export function extractPhotosPagination(params: HttpParams): [PipCachePaginationParams, HttpParams] {
   const res = new PipCachePaginationParams();
   if (params) {
@@ -93,7 +93,7 @@ export function extractPhotosPagination(params: HttpParams): [PipCachePagination
     },
     interceptors: {
       item: {
-        match: new RegExp('photos\/(?<id>[^ $\/]*)'), // Catch all requests and look for id
+        match: new RegExp('photos/([^\/]+)$'), // Catch all requests and look for id
         getKey: getPhotosKey  // return 'id' from RexExp match
       },
       collection: {

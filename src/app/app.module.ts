@@ -12,7 +12,7 @@ import { PhotosDataService, AppService } from './services';
 import { PagesModule } from './pages/pages.module';
 import { DialogsModule } from './dialogs/dialogs.module';
 
-export function getPhotosKey(groups: any) { return groups && groups.id; }
+export function getPhotosKey(groups: any) { return groups && groups.length > 1 && groups[1]; }
 export function extractPhotosPagination(params: HttpParams): [PipCachePaginationParams, HttpParams] {
   const res = new PipCachePaginationParams();
   if (params) {
@@ -56,7 +56,7 @@ export function extractPhotosPagination(params: HttpParams): [PipCachePagination
         },
         interceptors: {
           item: {
-            match: new RegExp('photos\/(?<id>[^ $\/]*)'),
+            match: new RegExp('photos/([^\/]+)$'),
             getKey: getPhotosKey
           },
           collection: {
