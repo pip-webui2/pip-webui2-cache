@@ -23,8 +23,7 @@ export class PipCacheInterceptor implements HttpInterceptor {
                         case 'GET':
                             switch (ik) {
                                 case 'item':
-                                    const { groups } = match;
-                                    return from(this.cacheService.getItem(model.name, interceptor.getKey(groups), interceptor.options))
+                                    return from(this.cacheService.getItem(model.name, interceptor.getKey(match), interceptor.options))
                                         .pipe(
                                             switchMap(item => {
                                                 if (!item) {
@@ -88,11 +87,10 @@ export class PipCacheInterceptor implements HttpInterceptor {
                         case 'DELETE':
                             switch (ik) {
                                 case 'item':
-                                    const { groups } = match;
                                     return next.handle(req).pipe(
                                         tap(e => {
                                             if (e.type === HttpEventType.Response) {
-                                                this.cacheService.deleteItems(model.name, [interceptor.getKey(groups)]);
+                                                this.cacheService.deleteItems(model.name, [interceptor.getKey(match)]);
                                             }
                                         })
                                     );

@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/license-MIT-blue.svg)
 
-**pip-webui2-cache** module contains cache behavior
+**pip-webui2-cache** module contains cache behavior  
 [DEMO is HERE](https://pip-webui2.github.io/pip-webui2-cache)
 
 ## Usage
