@@ -18,37 +18,37 @@ Config has this optional properties:
 Provide model(s) description through InjectionToken `PIP_CACHE_MODEL` with enabled flag `multi`.  
 Structure of `PipCacheModel`:
 ```js
-export class PipCacheModel {
+class PipCacheModel {
     name: string;
     options: {
         maxAge: number;
         key?: string;
     };
     interceptors: {
-        item?: {
-            match: RegExp;
-            options?: PipCacheInterceptorOptions;
-            getKey: (groups: any) => any;
-        };
-        collection?: {
-            match: RegExp;
-            options?: PipCacheInterceptorOptions;
-            responseModify?: {
-                responseToItems: (resp: any) => any[];
-                itemsToResponse: (items: any[]) => any;
-            }
-            getParams?: (params: HttpParams) => PipCacheCollectionParams;
-        };
+        item?: PipCacheInterceptorItemSettings;
+        collection?: PipCacheInterceptorCollectionSettings;
     };
 }
 
-export class PipCacheCollectionParams {
-    offset?: number;
-    limit?: number;
+class PipCacheInterceptorOptions {
+    maxAge?: number;
 }
 
-export class PipCacheInterceptorOptions {
-    maxAge?: number;
+class PipCacheInterceptorSettings {
+    match: RegExp;
+    options?: PipCacheInterceptorOptions;
+}
+
+class PipCacheInterceptorItemSettings extends PipCacheInterceptorSettings {
+    getKey: (groups: any) => any;
+}
+
+class PipCacheInterceptorCollectionSettings extends PipCacheInterceptorSettings {
+    responseModify?: {
+        responseToItems: (resp: any) => any[];
+        itemsToResponse: (items: any[]) => any;
+    };
+    extractPagination?: (params: HttpParams) => [PipCachePaginationParams, HttpParams];
 }
 ```
 Description:
@@ -65,18 +65,22 @@ Description:
     * `match` - regular expression to catch single item request. It **HAVE TO** contain named group like `/items\/(?<id>[^ $\/]*)/` to get key from request;
     * `options` - custom options to overwrite model options;
     * `responseModify` - functions to modify response if items returned in some property of response, not array;
-    * `getParams` - cache could accept parameters `offset` and `limit` to slice collections, but not all systems has the same naming. It will look for default parameters if this function won't provided.
+    * `extractPagination` - extract pagination params from request params. Make sure to delete this params in request params and return them
 
 Example:
 ```js
 export function getPhotosKey(groups: any) { return groups && groups.id; }
-export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
-  const res: PipCacheCollectionParams = {};
-  if (params.has('p') && params.has('l')) {
-    res.limit = parseInt(params.get('l'), 10);
-    res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+export function extractPhotosPagination(params: HttpParams): [PipCachePaginationParams, HttpParams] {
+  const res = new PipCachePaginationParams();
+  if (params) {
+    if (params.has('p') && params.has('l')) {
+      res.limit = parseInt(params.get('l'), 10);
+      res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+      params = params.delete('p');
+      params = params.delete('l');
+    }
   }
-  return res;
+  return [res, params];
 }
 // ...
 {
@@ -94,7 +98,7 @@ export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
       },
       collection: {
         match: new RegExp('photos'), // Catch all requests and look for 'photos' in request
-        getParams: getPhotosParams // Custom params handler
+        extractPagination: extractPhotosPagination // Custom params extractor
       }
     }
   } as PipCacheModel,

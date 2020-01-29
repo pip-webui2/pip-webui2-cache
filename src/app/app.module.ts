@@ -51,7 +51,7 @@ export function extractPhotosPagination(params: HttpParams): [PipCachePagination
       useValue: {
         name: 'photos',
         options: {
-          maxAge: 1000 * 60 * 60,
+          maxAge: 1000 * 60 * 2,
           key: 'id'
         },
         interceptors: {

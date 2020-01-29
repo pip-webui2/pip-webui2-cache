@@ -39,7 +39,7 @@ export class PipCacheInterceptorCollectionSettings extends PipCacheInterceptorSe
         responseToItems: (resp: any) => any[];
         itemsToResponse: (items: any[]) => any;
     };
-    extractPagination?: (params: HttpParams) => PipCachePaginationParams;
+    extractPagination?: (params: HttpParams) => [PipCachePaginationParams, HttpParams];
 }
 
 export class PipCacheModel {
