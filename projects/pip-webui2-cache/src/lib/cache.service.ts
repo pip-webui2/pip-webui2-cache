@@ -15,6 +15,15 @@ import { PipCacheConfigService } from './cache.config.service';
 import { HttpParams } from '@angular/common/http';
 import { isUndefined } from 'util';
 
+class TotalItem {
+    hash: string;
+    total: {
+        value: number;
+        lastRead: number;
+    };
+    idxMap: any[];
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -40,9 +49,8 @@ export class PipCacheService {
         const modelKey = model.options.key || 'id';
         db.version(2).stores({
             items: modelKey,
+            hashes: 'hash',
             lastRead: '',
-            indexes: '[hash+' + modelKey + '],hash,idx',
-            totals: 'hash',
             meta: ''
         });
         this.openedDbs.set(dbName, db);
@@ -92,17 +100,34 @@ export class PipCacheService {
         const hasPagination = Object.keys(pagination).length !== 0;
         const { offset, limit } = defaultsDeep(pagination, { offset: 0, limit: 0 });
         const hash = params && params.keys().length ? MD5(params) : '';
-        return db.table('totals').get(hash)
-            .then(totalDetails => {
-                const total = totalDetails && (totalDetails.lastRead + maxAge >= new Date().valueOf())
-                    ? totalDetails.total : undefined;
+        return db.table('hashes').get(hash)
+            .then((hi: TotalItem) => {
+                const total = hi && hi.total && hi.total.value && hi.total.lastRead + maxAge >= new Date().valueOf()
+                    ? hi.total.value : undefined;
                 const upper = offset + limit;
-                const indexesCollection = db.table('indexes').where('hash').equals(hash);
+                const plannedLength = hasPagination
+                    ? (limit ? (total ? (upper > total ? total - offset : limit) : limit) : (total ? (total - offset) : (limit)))
+                    : total;
+                let idxMap = hi && hi.idxMap || [];
                 if (hasPagination) {
                     if (limit) {
-                        indexesCollection.and(it => it.idx >= offset && it.idx < upper);
+                        idxMap = idxMap.filter((it, idx) => idx >= offset && idx < upper);
+                        if (idxMap.length !== plannedLength) {
+                            if (this.configService.config.enableLogs) {
+                                console.log('There\'s not enough information about indexes');
+                                console.groupEnd();
+                            }
+                            return Promise.reject(null);
+                        }
                     } else if (total !== undefined) {
-                        indexesCollection.and(it => it.idx >= offset);
+                        idxMap = idxMap.filter((it, idx) => idx >= offset);
+                        if (idxMap.length !== plannedLength) {
+                            if (this.configService.config.enableLogs) {
+                                console.log('Not all items presented in cache');
+                                console.groupEnd();
+                            }
+                            return Promise.reject(null);
+                        }
                     } else {
                         if (this.configService.config.enableLogs) {
                             console.log('We want to return all items, but we don\'t know how many they are');
@@ -117,54 +142,11 @@ export class PipCacheService {
                     }
                     return Promise.reject(null);
                 }
-                return indexesCollection.toArray()
-                    .then(indexes => {
-                        if (hasPagination) {
-                            if (limit) {
-                                if (indexes.length !== limit && (total === undefined || indexes.length !== total - offset)) {
-                                    if (this.configService.config.enableLogs) {
-                                        console.log('There\'s not enough information about indexes');
-                                        console.groupEnd();
-                                    }
-                                    return Promise.reject(null);
-                                }
-                                const ids = indexes.map(idx => idx.id);
-                                return Promise.all([
-                                    Promise.resolve(ids),
-                                    db.table('items').where(modelKey).anyOf(ids).toArray(),
-                                    db.table('lastRead').where('').anyOf(ids).toArray()
-                                ]);
-                            } else if (total !== undefined) {
-                                if (indexes.length !== limit && indexes.length !== total - offset) {
-                                    if (this.configService.config.enableLogs) {
-                                        console.log('Not all items presented in cache');
-                                        console.groupEnd();
-                                    }
-                                    return Promise.reject(null);
-                                }
-                                const ids = indexes.map(idx => idx.id);
-                                return Promise.all([
-                                    Promise.resolve(ids),
-                                    db.table('items').where(modelKey).anyOf(ids).toArray(),
-                                    db.table('lastRead').where('').anyOf(ids).toArray()
-                                ]);
-                            }
-                        } else {
-                            if (indexes.length !== total) {
-                                if (this.configService.config.enableLogs) {
-                                    console.log('Not all items presented in cache');
-                                    console.groupEnd();
-                                }
-                                return Promise.reject(null);
-                            }
-                            const ids = indexes.map(idx => idx.id);
-                            return Promise.all([
-                                Promise.resolve(ids),
-                                db.table('items').where(modelKey).anyOf(ids).toArray(),
-                                db.table('lastRead').where('').anyOf(ids).toArray()
-                            ]);
-                        }
-                    });
+                return Promise.all([
+                    Promise.resolve(idxMap),
+                    !hasPagination && !hash ? db.table('items').toArray() : db.table('items').where(modelKey).anyOf(idxMap).toArray(),
+                    !hasPagination && !hash ? db.table('lastRead').toArray() : db.table('lastRead').where('').anyOf(idxMap).toArray()
+                ]);
             }).then(([ids, items, reads]) => {
                 if (!items || items.length !== ids.length || !reads || reads.length !== ids.length) {
                     if (this.configService.config.enableLogs) {
@@ -192,151 +174,6 @@ export class PipCacheService {
                     throw reason;
                 }
             });
-        
-        // let indexes: { idx: number, [modelKey: string]: any, hash: string }[];
-        // let items: any[];
-        // if (payload.httpParams.has(payload.pagination.limit) || payload.httpParams.has(payload.pagination.offset)) {
-        //     // Probably we should return some part of collection
-        //     const offset = payload.httpParams.has('offset') ? parseInt(payload.httpParams.get('offset'), 10) : 0;
-        //     const limit = payload.httpParams.has('limit') ? parseInt(payload.httpParams.get('limit'), 10) : undefined;
-        //     if (limit !== undefined) {
-        //         indexes = await db.table('indexes').where('idx').between(offset, offset + limit, true, false).toArray();
-        //         if (indexes.length !== limit && (total === undefined || indexes.length !== total - offset)) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('There\'s not enough information about indexes');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         }
-        //     } else if (total !== undefined) {
-        //         indexes = await db.table('indexes').where('idx').aboveOrEqual(offset).toArray();
-        //         if (indexes.length !== limit || indexes.length !== total - offset) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('Not all items presented in cache');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         }
-        //     }
-        // } else if (total === undefined) {
-        //     if (this.configService.config.enableLogs) {
-        //         console.log('We want to return all items, but we don\'t know how many they are');
-        //         console.groupEnd();
-        //     }
-        //     return null;
-        // }
-        // if (indexes) {
-
-        // } else {
-
-        // }
-
-        // if (payload && Object.keys(params).length) {
-        //     // If we have some limitations we have to get ids of items and then items
-        //     const offset = params.hasOwnProperty('offset') ? params.offset : 0;
-        //     const limit = params.hasOwnProperty('limit') ? params.limit : undefined;
-        //     if (limit !== undefined) {
-        //         // This is the only case where we don't need to know about total items count
-        //         const indexes = await db.table('indexes').where('idx').between(offset, offset + limit, true, false).toArray();
-        //         if (indexes.length !== limit && (total === undefined || indexes.length !== total - offset)) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('There\'s not enough information about indexes');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         } else {
-        //             const ids = indexes.map(idx => idx.id);
-        //             const [items, reads] = await Promise.all([
-        //                 db.table('items').where(modelKey).anyOf(ids).toArray(),
-        //                 db.table('lastRead').where('').anyOf(ids).toArray()
-        //             ]);
-        //             if (!items || items.length !== indexes.length || !reads || reads.length !== indexes.length) {
-        //                 if (this.configService.config.enableLogs) {
-        //                     console.warn('Not all items presented in cache');
-        //                     console.groupEnd();
-        //                 }
-        //                 return null;
-        //             }
-        //             if (Math.min(...reads) + maxAge <= new Date().valueOf()) {
-        //                 if (this.configService.config.enableLogs) {
-        //                     console.log('Items was expired');
-        //                     console.groupEnd();
-        //                 }
-        //                 return null;
-        //             }
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('Items: ', items);
-        //                 console.groupEnd();
-        //             }
-        //             return items;
-        //         }
-        //     } else if (total !== undefined) {
-        //         // In this case we should check is total count of items presented
-        //         const indexes = await db.table('indexes').where('idx').aboveOrEqual(offset).toArray();
-        //         if (indexes.length !== limit || indexes.length !== total - offset) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('Not all items presented in cache');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         }
-        //         const ids = indexes.map(idx => idx.id);
-        //         const [items, reads] = await Promise.all([
-        //             db.table('items').where(modelKey).anyOf(ids).toArray(),
-        //             db.table('lastRead').where(modelKey).anyOf(ids).toArray()
-        //         ]);
-        //         if (!items || items.length !== indexes.length || !reads || reads.length !== indexes.length) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('Not all items presented in cache');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         }
-        //         if (Math.min(...reads) + maxAge >= new Date().valueOf()) {
-        //             if (this.configService.config.enableLogs) {
-        //                 console.log('Items was expired');
-        //                 console.groupEnd();
-        //             }
-        //             return null;
-        //         }
-        //         if (this.configService.config.enableLogs) {
-        //             console.log('Items: ', items);
-        //             console.groupEnd();
-        //         }
-        //         return items;
-        //     }
-        // } else if (total !== undefined) {
-        //     // If there is no limitations we have to return all items if they're all presented
-        //     const [items, reads] = await Promise.all([
-        //         db.table('items').toArray(),
-        //         db.table('lastRead').toArray()
-        //     ]);
-        //     if (!items || items.length !== total || !reads || reads.length !== total) {
-        //         if (this.configService.config.enableLogs) {
-        //             console.log('Not all items presented in cache');
-        //             console.groupEnd();
-        //         }
-        //         return null;
-        //     }
-        //     if (Math.min(...reads) + maxAge <= new Date().valueOf()) {
-        //         if (this.configService.config.enableLogs) {
-        //             console.log('Items was expired');
-        //             console.groupEnd();
-        //         }
-        //         return null;
-        //     }
-        //     if (this.configService.config.enableLogs) {
-        //         console.log('Items: ', items);
-        //         console.groupEnd();
-        //     }
-        //     return items;
-        // } else {
-        //     if (this.configService.config.enableLogs) {
-        //         console.log('We want to return all items, but we don\'t know how many they are');
-        //         console.groupEnd();
-        //     }
-        //     return null;
-        // }
     }
 
     public async setItem(modelName: string, item: any, options?: { removeTotal?: boolean }): Promise<any> {
@@ -374,17 +211,24 @@ export class PipCacheService {
         const [pagination, params]: [PipCachePaginationParams, HttpParams]
             = get(payload, 'interceptor.extractPagination', extractPaginationDefault)(payload && payload.httpParams);
         const hasPagination = Object.keys(pagination).length !== 0;
+        const { offset, limit } = defaultsDeep(pagination, { offset: 0, limit: 0 });
         const hash = params && params.keys().length ? MD5(params) : '';
-        const indexes = ids.map((id, idx) => ({ id, idx: idx + (pagination.offset || 0), hash }));
         const promises = [
             db.table('lastRead').bulkPut(new Array(items.length).fill(lastRead), ids),
             db.table('items').bulkPut(items),
-            db.table('indexes').bulkPut(indexes)
+            db.table('hashes').get(hash).then((hi: TotalItem) => {
+                const nh = hi || Object.assign(new TotalItem(), { hash, total: {}, idxMap: [] });
+                ids.forEach((id, idx) => nh.idxMap[idx + offset] = id);
+                if (hasPagination && pagination.limit && items.length < pagination.limit || !hasPagination) {
+                    total = (pagination.offset || 0) + items.length;
+                    nh.total = {
+                        value: total,
+                        lastRead
+                    };
+                }
+                return db.table('hashes').put(nh);
+            })
         ];
-        if (hasPagination && pagination.limit && items.length < pagination.limit || !hasPagination) {
-            total = (pagination.offset || 0) + items.length;
-            promises.push(db.table('totals').put({ hash, total, lastRead }));
-        }
         return Promise.all(promises).then(() => {
             if (this.configService.config.enableLogs) {
                 console.groupCollapsed('%c%s', 'color: blue; font: 1.2rem Impact;', '[PipCache] SET', 'collection of items');
@@ -404,24 +248,31 @@ export class PipCacheService {
     public async deleteItems(modelName: string, keys: any[]): Promise<any> {
         const model = this.getModel(modelName);
         const db = this.getDb(model);
-        const modelKey = model.options.key || 'id';
-        return db.table('indexes').where(modelKey).anyOf(keys).toArray()
-            .then(indexes => {
-                const hashes: Set<string> = (indexes || []).reduce((acc, curr) => { acc.add(curr.hash); return acc; }, new Set());
-                return Promise.all([
-                    db.table('lastRead').bulkDelete(keys),
-                    db.table('items').bulkDelete(keys),
-                    db.table('indexes').where(modelKey).anyOf(keys).delete(),
-                    db.table('totals').where('hash').anyOf(Array.from(hashes)).delete
-                ]);
-            }).then(() => {
-                if (this.configService.config.enableLogs) {
-                    console.groupCollapsed('%c%s', 'color: red; font: 1.2rem Impact;', '[PipCache] DELETE');
-                    console.log('Keys: ', keys);
-                    console.groupEnd();
-                }
-            });
-
+        return Promise.all([
+            db.table('lastRead').bulkDelete(keys),
+            db.table('items').bulkDelete(keys),
+            db.transaction('rw', db.table('hashes'), async () => {
+                await db.table('hashes').toCollection().modify(function () {
+                    let removeTotal;
+                    keys.forEach(key => {
+                        const idx = this.value.idxMap.findIndex(id => id === key);
+                        if (idx >= 0) {
+                            this.value.idxMap.splice(idx, 1);
+                            removeTotal = true;
+                        }
+                    });
+                    if (removeTotal) {
+                        delete this.value.total;
+                    }
+                });
+            })
+        ]).then(() => {
+            if (this.configService.config.enableLogs) {
+                console.groupCollapsed('%c%s', 'color: red; font: 1.2rem Impact;', '[PipCache] DELETE');
+                console.log('Keys: ', keys);
+                console.groupEnd();
+            }
+        });
     }
 
     public async clear(model?: string | string[]): Promise<any> {
@@ -447,7 +298,7 @@ export class PipCacheService {
                     promises.push(db.table('items').clear());
                     promises.push(db.table('meta').clear());
                     promises.push(db.table('lastRead').clear());
-                    promises.push(db.table('indexes').clear());
+                    promises.push(db.table('hashes').clear());
                 } catch (err) {
                     if (this.configService.config.enableLogs) {
                         console.warn('Error opening database ' + name);
