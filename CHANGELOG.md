@@ -1,6 +1,6 @@
 # Pip.WebUI.Cache Changelog
 
-## <a name="1.1.0-rc.1"></a> 1.1.0-rc.1 (2020-01-29)
+## <a name="1.1.0"></a> 1.1.0 (2020-01-29)
 
 Request with params now supported
 
