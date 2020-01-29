@@ -3,7 +3,7 @@ import { HttpClientModule, HttpParams } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { PipCacheModule, PIP_CACHE_MODEL, PipCacheModel, PipCacheCollectionParams } from 'pip-webui2-cache';
+import { PipCacheModule, PIP_CACHE_MODEL, PipCacheModel, PipCachePaginationParams } from 'pip-webui2-cache';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -13,13 +13,17 @@ import { PagesModule } from './pages/pages.module';
 import { DialogsModule } from './dialogs/dialogs.module';
 
 export function getPhotosKey(groups: any) { return groups && groups.id; }
-export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
-  const res: PipCacheCollectionParams = {};
-  if (params.has('p') && params.has('l')) {
-    res.limit = parseInt(params.get('l'), 10);
-    res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+export function extractPhotosPagination(params: HttpParams): [PipCachePaginationParams, HttpParams] {
+  const res = new PipCachePaginationParams();
+  if (params) {
+    if (params.has('p') && params.has('l')) {
+      res.limit = parseInt(params.get('l'), 10);
+      res.offset = (parseInt(params.get('p'), 10) - 1) * res.limit;
+      params = params.delete('p');
+      params = params.delete('l');
+    }
   }
-  return res;
+  return [res, params];
 }
 
 @NgModule({
@@ -47,7 +51,7 @@ export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
       useValue: {
         name: 'photos',
         options: {
-          maxAge: 1000 * 60 * 2,
+          maxAge: 1000 * 60 * 60,
           key: 'id'
         },
         interceptors: {
@@ -57,7 +61,7 @@ export function getPhotosParams(params: HttpParams): PipCacheCollectionParams {
           },
           collection: {
             match: new RegExp('photos'),
-            getParams: getPhotosParams
+            extractPagination: extractPhotosPagination
           }
         }
       } as PipCacheModel,

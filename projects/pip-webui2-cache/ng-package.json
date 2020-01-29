@@ -9,6 +9,7 @@
   },
   "whitelistedNonPeerDependencies": [
     "dexie",
+    "object-hash",
     "tslib"
   ]
 }
